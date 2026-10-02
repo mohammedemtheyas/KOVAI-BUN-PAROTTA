@@ -2,120 +2,127 @@ export interface User {
   id: string;
   name: string;
   username: string;
+  role: 'building_manager' | 'energy_engineer' | 'facility_operator' | 'admin';
 }
 
-export interface Category {
-  _id: string;
+export interface BuildingMetrics {
+  energyTodayKwh: number;        // 24.8 kWh
+  currentPowerKw: number;        // 4.2 kW
+  occupancyPercent: number;      // 68%
+  indoorTempC: number;           // 24.6°C
+  co2Ppm: number;                // 720 ppm
+  energySavingPercent: number;   // 18.4%
+  peakLoadKw: number;            // 3.8 kW
+  comfortScore: number;          // 94/100
+}
+
+export type SensorStatus = 'NORMAL' | 'WARNING' | 'MONITOR';
+
+export interface SensorItem {
+  id: string;
   name: string;
-  slug: string;
-  icon: string;
-  sortOrder: number;
+  type: 'Temperature' | 'Humidity' | 'CO2' | 'Occupancy' | 'Light intensity' | 'Power consumption' | 'Equipment status';
+  value: string;
+  numericValue: number;
+  unit: string;
+  status: SensorStatus;
+  lastUpdated: string;
+  zone: string;
+  floor: string;
+  optimalRange: string;
 }
 
-export interface MenuItem {
-  _id: string;
-  name: string;
-  tamilName?: string;
-  category: string;
-  price: number;
-  description: string;
-  imageUrl: string;
-  isVeg: boolean;
-  isAvailable: boolean;
-  isPopular: boolean;
-  isSpecial: boolean;
-  rating?: number;
-  preparationTime?: string;
-  tags?: string[];
-  quickBillKey?: number | null;
-  orderCount?: number;
-}
-
-export interface OrderItem {
-  menuItemId?: string;
-  name: string;
-  price: number;
-  quantity: number;
-  notes?: string;
-}
-
-export type OrderType = 'Dine In' | 'Takeaway' | 'Parcel';
-export type PaymentMethod = 'Cash' | 'UPI' | 'Card';
-export type PaymentStatus = 'Paid' | 'Pending' | 'Cancelled';
-export type OrderStatus = 'NEW' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
-
-export interface Order {
-  _id: string;
-  orderNumber: string;
-  orderType: OrderType;
-  tableNumber: string;
-  items: OrderItem[];
-  subtotal: number;
-  discount: number;
-  tax: number;
-  taxRate: number;
-  grandTotal: number;
-  paymentMethod: PaymentMethod;
-  amountReceived: number;
-  change: number;
-  paymentStatus: PaymentStatus;
-  status: OrderStatus;
-  cashierName: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface PaymentBreakdownItem {
-  name: string;
-  value: number;
-}
-
-export interface HourlySalesChartItem {
+export interface HourlyChartData {
   hour: string;
-  sales: number;
+  actualEnergyKw: number;
+  predictedEnergyKw: number;
+  baselineEnergyKw: number;
+  occupancyPercent: number;
+  temperatureC: number;
 }
 
-export interface SalesDailyChartItem {
-  day: string;
-  totalSales: number;
-  orders: number;
+export interface ZoneConsumptionData {
+  zone: string;
+  floor: string;
+  energyKwh: number;
+  percentage: number;
+  activeOccupants: number;
+  status: 'OPTIMAL' | 'MODERATE' | 'HIGH';
+  hvacState: string;
+  lightingState: string;
 }
 
-export interface TopDishItem {
-  rank: number;
+export interface AiRecommendation {
+  id: string;
+  title: string;
+  description: string;
+  zone: string;
+  potentialSavingsKw: number;
+  confidence: number;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  actionType: 'HVAC' | 'LIGHTING' | 'PEAK_SHIFT' | 'INSPECT';
+  isApplied: boolean;
+}
+
+export type SystemControlMode = 'ON' | 'OFF' | 'AUTO' | 'SCHEDULED' | 'PEAK-SHIFT';
+
+export interface ControllableSystem {
+  id: string;
   name: string;
-  category: string;
-  imageUrl: string;
-  orders: number;
-  revenue: number;
+  category: 'LIGHTING' | 'HVAC' | 'FANS' | 'FLEXIBLE LOAD';
+  currentMode: SystemControlMode;
+  allowedModes: SystemControlMode[];
+  setpoint?: string;
+  powerKw: number;
+  zone: string;
+  occupancyDriven: boolean;
 }
 
-export interface SalesDashboardData {
-  todaySales: number;
-  totalOrdersCount: number;
-  avgOrderValue: number;
-  pendingOrdersCount: number;
-  bestSellingItem: string;
-  totalDiscount: number;
-  paymentBreakdown: PaymentBreakdownItem[];
-  hourlySalesChart: HourlySalesChartItem[];
-  dailySalesChart: SalesDailyChartItem[];
-  topDishes: TopDishItem[];
+export type AlertSeverity = 'CRITICAL' | 'WARNING' | 'INFO' | 'SUCCESS';
+
+export interface AlertItem {
+  id: string;
+  severity: AlertSeverity;
+  title: string;
+  message: string;
+  location: string;
+  timestamp: string;
+  acknowledged: boolean;
 }
 
-export interface DailyClosingReport {
-  _id?: string;
-  dateStr: string;
-  totalOrders: number;
-  totalSales: number;
-  cashSales: number;
-  upiSales: number;
-  cardSales: number;
-  totalDiscount: number;
-  totalTax: number;
-  cancelledOrders: number;
-  netSales: number;
-  closedBy: string;
-  closedAt: string;
+export interface DemandResponseSimulation {
+  normalLoadKw: number;          // 5.6 kW
+  predictedPeakKw: number;       // 6.4 kW
+  recommendedFlexibleShiftKw: number; // 1.2 kW
+  postOptimizationKw: number;    // 5.2 kW
+  isShiftActive: boolean;
+  gridStatus: 'NORMAL' | 'PEAK_ALERT' | 'OPTIMIZED';
+  label: 'Prototype Simulation';
+}
+
+export interface OccupantExperienceMetrics {
+  temperatureC: number;
+  tempStatus: string;           // "24.6°C — Comfortable"
+  co2Ppm: number;
+  co2Status: string;            // "720 ppm — Good"
+  humidityPercent: number;
+  humidityStatus: string;       // "52% — Comfortable"
+  lightingLux: number;
+  lightingStatus: string;       // "780 lux — Suitable"
+  occupancyPercent: number;
+  comfortScore: number;         // 94/100
+}
+
+export interface ArchitectureEntity {
+  entity: string;
+  table: string;
+  description: string;
+  fields: string[];
+}
+
+export interface ValidationMetric {
+  metric: string;
+  description: string;
+  status: 'Testing Planned' | 'In Progress';
+  target: string;
 }

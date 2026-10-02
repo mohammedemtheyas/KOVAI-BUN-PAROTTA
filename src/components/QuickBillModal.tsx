@@ -1,141 +1,122 @@
-import React, { useState, useEffect } from 'react';
-import { X, Zap, Plus, ShoppingBag, Command } from 'lucide-react';
-import { MenuItem } from '../types';
+import React, { useState } from 'react';
+import { X, Zap, Sliders, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { api } from '../services/api';
 
-interface QuickBillModalProps {
+interface QuickControlModalProps {
   isOpen: boolean;
   onClose: () => void;
-  quickBillItems: MenuItem[];
-  onAddItem: (item: MenuItem, quantity: number) => void;
+  onSuccess?: () => void;
 }
 
-export const QuickBillModal: React.FC<QuickBillModalProps> = ({
+export const QuickBillModal: React.FC<QuickControlModalProps> = ({
   isOpen,
   onClose,
-  quickBillItems,
-  onAddItem
+  onSuccess
 }) => {
-  const [selectedKey, setSelectedKey] = useState<number | null>(null);
-  const [quantity, setQuantity] = useState<number>(1);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (['1', '2', '3', '4', '5'].includes(e.key)) {
-        const keyNum = parseInt(e.key, 10);
-        const item = quickBillItems.find(i => i.quickBillKey === keyNum);
-        if (item) {
-          onAddItem(item, quantity);
-          setSelectedKey(keyNum);
-          setTimeout(() => setSelectedKey(null), 300);
-        }
-      } else if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, quickBillItems, quantity, onAddItem, onClose]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [successMsg, setSuccessMsg] = useState<string>('');
+  const [selectedShiftKw, setSelectedShiftKw] = useState<number>(1.2);
 
   if (!isOpen) return null;
 
+  const handleExecuteShift = async () => {
+    setLoading(true);
+    try {
+      await api.togglePeakShift(true);
+      setSuccessMsg('Peak Load Reduction executed! Flexible HVAC and lighting loads shifted by 1.2 kW.');
+      setTimeout(() => {
+        setSuccessMsg('');
+        if (onSuccess) onSuccess();
+        onClose();
+      }, 1800);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-kovai-500/40 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl shadow-kovai-500/10">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-kovai-600 to-amber-700 p-4 flex items-center justify-between text-slate-950">
-          <div className="flex items-center gap-2 font-black text-base">
-            <Zap size={20} className="fill-slate-950" />
-            <span>QUICK BILL MODE (Rush Hour Speed)</span>
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-slate-900 border border-emerald-500/30 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative">
+        <button
+          onClick={onClose}
+          className="absolute top-5 right-5 text-slate-400 hover:text-white bg-slate-800 p-2 rounded-xl transition-all"
+        >
+          <X size={18} />
+        </button>
+
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center">
+            <Zap size={20} />
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg hover:bg-slate-900/20 text-slate-950 transition-all"
-          >
-            <X size={20} />
-          </button>
+          <div>
+            <h3 className="text-lg font-bold text-white uppercase tracking-tight">QUICK PEAK LOAD SHIFT</h3>
+            <p className="text-xs text-slate-400">Demand Response Emergency Override</p>
+          </div>
         </div>
 
-        {/* Instructions */}
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4 bg-slate-850 p-3 rounded-xl border border-slate-800">
-            <span className="text-xs font-semibold text-slate-300">Default Quantity Multiplier:</span>
-            <div className="flex items-center gap-2">
-              {[1, 2, 3, 5, 10].map(qty => (
-                <button
-                  key={qty}
-                  onClick={() => setQuantity(qty)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                    quantity === qty
-                      ? 'bg-kovai-500 text-slate-950'
-                      : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  x{qty}
-                </button>
-              ))}
+        {successMsg ? (
+          <div className="p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 flex items-center gap-3">
+            <CheckCircle2 size={24} className="text-emerald-400 shrink-0" />
+            <span className="text-xs font-semibold">{successMsg}</span>
+          </div>
+        ) : (
+          <>
+            <div className="p-4 rounded-2xl bg-slate-850 border border-slate-750 space-y-3">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-400">Current Grid Demand Status:</span>
+                <span className="text-amber-400 font-bold flex items-center gap-1">
+                  <ShieldAlert size={14} /> Peak Tariff Imminent
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-400">Target Flexible Shift:</span>
+                <span className="text-emerald-400 font-mono font-bold">{selectedShiftKw} kW</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-400">Post-Shift Building Load:</span>
+                <span className="text-white font-mono font-bold">5.2 kW (from 6.4 kW)</span>
+              </div>
             </div>
-          </div>
 
-          <p className="text-xs text-slate-400 mb-3 flex items-center gap-1">
-            <Command size={14} className="text-kovai-400" />
-            <span>Press keys <strong>1 - 5</strong> on your keyboard to instantly add to bill:</span>
-          </p>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-300">Select Flexible Shift Magnitude:</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[0.8, 1.2, 1.8].map(val => (
+                  <button
+                    key={val}
+                    onClick={() => setSelectedShiftKw(val)}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold font-mono transition-all ${
+                      selectedShiftKw === val
+                        ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-md'
+                        : 'bg-slate-800 text-slate-300 border-slate-700'
+                    }`}
+                  >
+                    -{val} kW
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          {/* Hotkey Cards */}
-          <div className="grid grid-cols-1 gap-2.5">
-            {quickBillItems.map((item) => {
-              const key = item.quickBillKey;
-              const isFlashing = selectedKey === key;
-
-              return (
-                <button
-                  key={item._id}
-                  onClick={() => {
-                    onAddItem(item, quantity);
-                    setSelectedKey(key || null);
-                    setTimeout(() => setSelectedKey(null), 300);
-                  }}
-                  className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all ${
-                    isFlashing
-                      ? 'bg-kovai-500 text-slate-950 border-kovai-400 scale-[1.02]'
-                      : 'bg-slate-850 hover:bg-slate-800 border-slate-750 text-slate-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="w-9 h-9 rounded-lg bg-amber-500/20 text-amber-400 font-extrabold text-base flex items-center justify-center border border-amber-500/40">
-                      {key}
-                    </span>
-                    <div>
-                      <h4 className="font-bold text-sm leading-none">{item.name}</h4>
-                      <span className="text-xs text-kovai-400 font-semibold">₹{item.price}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs bg-slate-800 text-slate-300 font-semibold px-2 py-1 rounded">
-                      + Add x{quantity}
-                    </span>
-                    <Plus size={16} className="text-kovai-400" />
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 bg-slate-850 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400">
-          <span>Press <strong>ESC</strong> to exit Quick Bill</span>
-          <button
-            onClick={onClose}
-            className="bg-kovai-500 hover:bg-kovai-600 text-slate-950 font-bold px-4 py-2 rounded-xl transition-all"
-          >
-            Done & View Cart
-          </button>
-        </div>
+            <div className="pt-2 flex gap-3">
+              <button
+                onClick={onClose}
+                className="flex-1 py-3 bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold text-xs rounded-2xl border border-slate-700 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleExecuteShift}
+                disabled={loading}
+                className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-xs rounded-2xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
+              >
+                <Sliders size={16} />
+                <span>{loading ? 'Executing Shift...' : 'Trigger Peak Shift'}</span>
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
