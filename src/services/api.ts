@@ -1,292 +1,9 @@
-import {
-  BuildingMetrics,
-  SensorItem,
-  HourlyChartData,
-  ZoneConsumptionData,
-  AiRecommendation,
-  ControllableSystem,
-  AlertItem,
-  DemandResponseSimulation,
-  OccupantExperienceMetrics,
-  User
-} from '../types';
+import { MenuItem, Category, Order, SalesDashboardData, DailyClosingReport, User } from '../types';
 
 const API_BASE = '/api';
 
-// Initial Mock Datasets representing the prototype simulation
-let mockMetrics: BuildingMetrics = {
-  energyTodayKwh: 24.8,
-  currentPowerKw: 4.2,
-  occupancyPercent: 68,
-  indoorTempC: 24.6,
-  co2Ppm: 720,
-  energySavingPercent: 18.4,
-  peakLoadKw: 3.8,
-  comfortScore: 94
-};
-
-let mockSensors: SensorItem[] = [
-  {
-    id: 'sens-01',
-    name: 'Temperature',
-    type: 'Temperature',
-    value: '24.6°C',
-    numericValue: 24.6,
-    unit: '°C',
-    status: 'NORMAL',
-    lastUpdated: '10 seconds ago',
-    zone: 'Zone 1 - Main Floor',
-    floor: 'Floor 1',
-    optimalRange: '22.0°C - 26.0°C'
-  },
-  {
-    id: 'sens-02',
-    name: 'Humidity',
-    type: 'Humidity',
-    value: '52%',
-    numericValue: 52,
-    unit: '%',
-    status: 'NORMAL',
-    lastUpdated: '12 seconds ago',
-    zone: 'Zone 1 - Main Floor',
-    floor: 'Floor 1',
-    optimalRange: '40% - 60%'
-  },
-  {
-    id: 'sens-03',
-    name: 'CO₂ Concentration',
-    type: 'CO2',
-    value: '720 ppm',
-    numericValue: 720,
-    unit: 'ppm',
-    status: 'NORMAL',
-    lastUpdated: '5 seconds ago',
-    zone: 'Meeting Room A',
-    floor: 'Floor 2',
-    optimalRange: '< 800 ppm'
-  },
-  {
-    id: 'sens-04',
-    name: 'Occupancy Sensor',
-    type: 'Occupancy',
-    value: '68%',
-    numericValue: 68,
-    unit: '%',
-    status: 'NORMAL',
-    lastUpdated: 'Live',
-    zone: 'Open Workspace B',
-    floor: 'Floor 1',
-    optimalRange: '0% - 100%'
-  },
-  {
-    id: 'sens-05',
-    name: 'Light Intensity',
-    type: 'Light intensity',
-    value: '780 lux',
-    numericValue: 780,
-    unit: 'lux',
-    status: 'NORMAL',
-    lastUpdated: '15 seconds ago',
-    zone: 'Executive Suite',
-    floor: 'Floor 2',
-    optimalRange: '500 - 850 lux'
-  },
-  {
-    id: 'sens-06',
-    name: 'Power Consumption',
-    type: 'Power consumption',
-    value: '4.2 kW',
-    numericValue: 4.2,
-    unit: 'kW',
-    status: 'MONITOR',
-    lastUpdated: 'Real-time',
-    zone: 'HVAC Main Plant',
-    floor: 'Basement / Utility',
-    optimalRange: '< 4.5 kW'
-  },
-  {
-    id: 'sens-07',
-    name: 'Equipment Status',
-    type: 'Equipment status',
-    value: 'Active / Auto',
-    numericValue: 1,
-    unit: 'State',
-    status: 'NORMAL',
-    lastUpdated: '2 seconds ago',
-    zone: 'AHU Unit #3',
-    floor: 'Rooftop',
-    optimalRange: 'Operational'
-  }
-];
-
-let mockHourlyChart: HourlyChartData[] = [
-  { hour: '00:00', actualEnergyKw: 1.8, predictedEnergyKw: 1.9, baselineEnergyKw: 2.5, occupancyPercent: 5, temperatureC: 22.1 },
-  { hour: '02:00', actualEnergyKw: 1.6, predictedEnergyKw: 1.7, baselineEnergyKw: 2.4, occupancyPercent: 0, temperatureC: 22.0 },
-  { hour: '04:00', actualEnergyKw: 1.7, predictedEnergyKw: 1.8, baselineEnergyKw: 2.3, occupancyPercent: 0, temperatureC: 21.9 },
-  { hour: '06:00', actualEnergyKw: 2.4, predictedEnergyKw: 2.3, baselineEnergyKw: 3.1, occupancyPercent: 12, temperatureC: 22.5 },
-  { hour: '08:00', actualEnergyKw: 4.1, predictedEnergyKw: 4.0, baselineEnergyKw: 5.2, occupancyPercent: 45, temperatureC: 23.8 },
-  { hour: '10:00', actualEnergyKw: 5.4, predictedEnergyKw: 5.2, baselineEnergyKw: 6.8, occupancyPercent: 82, temperatureC: 24.5 },
-  { hour: '12:00', actualEnergyKw: 5.8, predictedEnergyKw: 5.6, baselineEnergyKw: 7.2, occupancyPercent: 88, temperatureC: 25.1 },
-  { hour: '14:00', actualEnergyKw: 4.2, predictedEnergyKw: 4.4, baselineEnergyKw: 5.9, occupancyPercent: 68, temperatureC: 24.6 },
-  { hour: '16:00', actualEnergyKw: 4.8, predictedEnergyKw: 4.8, baselineEnergyKw: 6.1, occupancyPercent: 74, temperatureC: 24.8 },
-  { hour: '18:00', actualEnergyKw: 3.2, predictedEnergyKw: 3.1, baselineEnergyKw: 4.5, occupancyPercent: 32, temperatureC: 23.9 },
-  { hour: '20:00', actualEnergyKw: 2.1, predictedEnergyKw: 2.2, baselineEnergyKw: 3.0, occupancyPercent: 10, temperatureC: 23.0 },
-  { hour: '22:00', actualEnergyKw: 1.9, predictedEnergyKw: 1.9, baselineEnergyKw: 2.6, occupancyPercent: 2, temperatureC: 22.4 }
-];
-
-let mockZoneData: ZoneConsumptionData[] = [
-  { zone: 'Zone 1 - Open Workstations', floor: 'Floor 1', energyKwh: 8.4, percentage: 33.8, activeOccupants: 34, status: 'OPTIMAL', hvacState: '24.0°C Auto', lightingState: 'Auto Dimmed' },
-  { zone: 'Zone 2 - Meeting & Conference', floor: 'Floor 2', energyKwh: 5.2, percentage: 20.9, activeOccupants: 14, status: 'OPTIMAL', hvacState: '24.5°C Eco', lightingState: '780 Lux Auto' },
-  { zone: 'Zone 3 - Executive Offices', floor: 'Floor 2', energyKwh: 3.6, percentage: 14.5, activeOccupants: 8, status: 'OPTIMAL', hvacState: '24.0°C Comfort', lightingState: 'Auto On' },
-  { zone: 'Zone 4 - Cafeteria & Common', floor: 'Floor 1', energyKwh: 4.1, percentage: 16.5, activeOccupants: 12, status: 'MODERATE', hvacState: '24.2°C Auto', lightingState: 'Occupancy Sensing' },
-  { zone: 'Zone 5 - Data & Server Rack', floor: 'Basement', energyKwh: 3.5, percentage: 14.3, activeOccupants: 0, status: 'HIGH', hvacState: '21.0°C Precision', lightingState: 'Off' }
-];
-
-let mockAiRecommendations: AiRecommendation[] = [
-  {
-    id: 'rec-1',
-    title: 'Reduce HVAC load in Zone 2',
-    description: 'Meeting Room occupancy has dropped to 15%. Pre-cooling can be reduced by 0.6 kW while maintaining 24.6°C comfort.',
-    zone: 'Zone 2 - Floor 2',
-    potentialSavingsKw: 0.6,
-    confidence: 94,
-    priority: 'HIGH',
-    actionType: 'HVAC',
-    isApplied: false
-  },
-  {
-    id: 'rec-2',
-    title: 'Turn off unused lighting in Zone 4',
-    description: 'No movement detected in Cafeteria Annex for 18 minutes. Automated dimming to 20% recommended.',
-    zone: 'Zone 4 - Floor 1',
-    potentialSavingsKw: 0.35,
-    confidence: 98,
-    priority: 'MEDIUM',
-    actionType: 'LIGHTING',
-    isApplied: false
-  },
-  {
-    id: 'rec-3',
-    title: 'Shift flexible equipment away from peak demand',
-    description: 'Upcoming 15:00 grid tariff surge predicted. Defer water heating pump cycle by 45 minutes.',
-    zone: 'Utility Plant',
-    potentialSavingsKw: 1.2,
-    confidence: 91,
-    priority: 'HIGH',
-    actionType: 'PEAK_SHIFT',
-    isApplied: false
-  },
-  {
-    id: 'rec-4',
-    title: 'Investigate abnormal consumption in Floor 1',
-    description: 'Power draw in East Corridor is 14% higher than historical baseline for current occupancy.',
-    zone: 'Floor 1 East',
-    potentialSavingsKw: 0.5,
-    confidence: 88,
-    priority: 'LOW',
-    actionType: 'INSPECT',
-    isApplied: false
-  }
-];
-
-let mockControllableSystems: ControllableSystem[] = [
-  {
-    id: 'sys-light',
-    name: 'LIGHTING',
-    category: 'LIGHTING',
-    currentMode: 'AUTO',
-    allowedModes: ['ON', 'OFF', 'AUTO'],
-    setpoint: '780 Lux',
-    powerKw: 0.8,
-    zone: 'Building-Wide (Floors 1 & 2)',
-    occupancyDriven: true
-  },
-  {
-    id: 'sys-hvac',
-    name: 'HVAC',
-    category: 'HVAC',
-    currentMode: 'AUTO',
-    allowedModes: ['AUTO', 'ON', 'OFF'],
-    setpoint: '24.6°C',
-    powerKw: 2.4,
-    zone: 'AHU Units #1-#4',
-    occupancyDriven: true
-  },
-  {
-    id: 'sys-fans',
-    name: 'FANS',
-    category: 'FANS',
-    currentMode: 'AUTO',
-    allowedModes: ['ON', 'OFF', 'AUTO'],
-    setpoint: 'Speed Level 2',
-    powerKw: 0.4,
-    zone: 'Indoor Circulation',
-    occupancyDriven: true
-  },
-  {
-    id: 'sys-flex',
-    name: 'FLEXIBLE LOAD',
-    category: 'FLEXIBLE LOAD',
-    currentMode: 'SCHEDULED',
-    allowedModes: ['SCHEDULED', 'PEAK-SHIFT'],
-    setpoint: 'Grid Responsive',
-    powerKw: 0.6,
-    zone: 'Pumps & Thermal Storage',
-    occupancyDriven: false
-  }
-];
-
-let mockAlerts: AlertItem[] = [
-  {
-    id: 'alt-01',
-    severity: 'WARNING',
-    title: 'High energy consumption detected — Floor 2',
-    message: 'Zone 2 power usage spiked by 1.1 kW above baseline prediction.',
-    location: 'Floor 2 Executive Suite',
-    timestamp: '14:22:05',
-    acknowledged: false
-  },
-  {
-    id: 'alt-02',
-    severity: 'WARNING',
-    title: 'CO₂ increasing — Meeting Room A',
-    message: 'Indoor CO₂ level rose to 720 ppm during 14-person strategy workshop.',
-    location: 'Meeting Room A (Floor 2)',
-    timestamp: '14:18:30',
-    acknowledged: false
-  },
-  {
-    id: 'alt-03',
-    severity: 'SUCCESS',
-    title: 'HVAC optimization completed',
-    message: 'Chiller setpoint adjusted to 24.6°C automatically saving 0.45 kW.',
-    location: 'Central Plant',
-    timestamp: '13:45:00',
-    acknowledged: true
-  },
-  {
-    id: 'alt-04',
-    severity: 'INFO',
-    title: 'Peak-load reduction recommendation available',
-    message: 'Grid demand forecast indicates potential 6.4 kW peak at 15:30.',
-    location: 'System-wide',
-    timestamp: '13:00:00',
-    acknowledged: true
-  }
-];
-
-let mockDemandResponse: DemandResponseSimulation = {
-  normalLoadKw: 5.6,
-  predictedPeakKw: 6.4,
-  recommendedFlexibleShiftKw: 1.2,
-  postOptimizationKw: 5.2,
-  isShiftActive: false,
-  gridStatus: 'NORMAL',
-  label: 'Prototype Simulation'
-};
-
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const token = localStorage.getItem('smart_building_token');
+  const token = localStorage.getItem('kovai_pos_token');
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
@@ -301,12 +18,14 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       ...options,
       headers,
     });
+
     if (response.ok) {
       return (await response.json()) as T;
     }
-  } catch {
-    // Fall back smoothly to client simulation when backend server is offline
+  } catch (err) {
+    // Fallback if backend server is restarting or offline
   }
+
   return null as unknown as T;
 }
 
@@ -319,148 +38,435 @@ export const api = {
     });
     if (res && res.token) return res;
 
-    // Standalone prototype demo login fallback
+    // Standalone fallback
     return {
-      token: 'demo-smart-building-jwt-token',
+      token: 'demo-kovai-pos-jwt-token',
       user: {
-        id: 'usr-1',
-        name: 'Building Manager',
-        username: username || 'admin',
-        role: 'building_manager'
+        id: 'usr-admin',
+        name: 'Kovai Restaurant Operator',
+        username: username || 'admin'
       }
     };
   },
 
-  // Building Metrics
-  getDashboardMetrics: async (): Promise<BuildingMetrics> => {
-    const backendData = await request<BuildingMetrics>('/building/metrics');
-    if (backendData) return backendData;
-    return { ...mockMetrics };
+  getMe: () => request<User>('/auth/me'),
+
+  seedDatabase: () =>
+    request<{ message: string }>('/auth/seed', { method: 'POST' }),
+
+  // Menu & Categories
+  getCategories: async (): Promise<Category[]> => {
+    const data = await request<Category[]>('/menu/categories');
+    if (data && data.length > 0) return data;
+
+    return [
+      { _id: 'cat1', name: 'Popular', slug: 'popular', icon: 'Flame', sortOrder: 1 },
+      { _id: 'cat2', name: 'Parotta', slug: 'parotta', icon: 'Disc', sortOrder: 2 },
+      { _id: 'cat3', name: 'Chicken', slug: 'chicken', icon: 'Drumstick', sortOrder: 3 },
+      { _id: 'cat4', name: 'Biryani', slug: 'biryani', icon: 'Bowl', sortOrder: 4 },
+      { _id: 'cat5', name: 'Rice & Noodles', slug: 'rice-noodles', icon: 'Utensils', sortOrder: 5 },
+      { _id: 'cat6', name: 'Egg', slug: 'egg', icon: 'Egg', sortOrder: 6 },
+      { _id: 'cat7', name: 'Dosa / Tiffin', slug: 'dosa', icon: 'CookingPot', sortOrder: 7 },
+      { _id: 'cat8', name: 'Veg', slug: 'veg', icon: 'Leaf', sortOrder: 8 },
+      { _id: 'cat9', name: 'Beverages', slug: 'beverages', icon: 'Coffee', sortOrder: 9 },
+    ];
   },
 
-  // Sensor Monitoring
-  getLiveSensors: async (zoneFilter?: string): Promise<SensorItem[]> => {
-    const backendData = await request<SensorItem[]>(`/building/sensors${zoneFilter ? `?zone=${zoneFilter}` : ''}`);
-    if (backendData) return backendData;
-    if (!zoneFilter || zoneFilter === 'ALL') return [...mockSensors];
-    return mockSensors.filter(s => s.zone.toLowerCase().includes(zoneFilter.toLowerCase()) || s.floor.toLowerCase().includes(zoneFilter.toLowerCase()));
-  },
+  getMenuItems: async (category?: string, search?: string, vegOnly?: boolean): Promise<MenuItem[]> => {
+    const params = new URLSearchParams();
+    if (category) params.append('category', category);
+    if (search) params.append('search', search);
+    if (vegOnly) params.append('vegOnly', 'true');
 
-  // Hourly Analytics Charts
-  getHourlyChartData: async (): Promise<HourlyChartData[]> => {
-    const backendData = await request<HourlyChartData[]>('/building/hourly');
-    if (backendData) return backendData;
-    return [...mockHourlyChart];
-  },
+    const data = await request<MenuItem[]>(`/menu?${params.toString()}`);
+    if (data && data.length > 0) return data;
 
-  // Zone Consumption Breakdown
-  getZoneData: async (): Promise<ZoneConsumptionData[]> => {
-    const backendData = await request<ZoneConsumptionData[]>('/building/zones');
-    if (backendData) return backendData;
-    return [...mockZoneData];
-  },
-
-  // AI & ML Recommendations
-  getAiRecommendations: async (): Promise<AiRecommendation[]> => {
-    const backendData = await request<AiRecommendation[]>('/building/ai-recommendations');
-    if (backendData) return backendData;
-    return [...mockAiRecommendations];
-  },
-
-  applyAiRecommendation: async (id: string): Promise<AiRecommendation> => {
-    mockAiRecommendations = mockAiRecommendations.map(rec => {
-      if (rec.id === id) {
-        // Adjust power stats upon applying recommendation
-        mockMetrics.currentPowerKw = Math.max(2.5, Math.round((mockMetrics.currentPowerKw - rec.potentialSavingsKw) * 10) / 10);
-        mockMetrics.energySavingPercent = Math.min(30, Math.round((mockMetrics.energySavingPercent + 1.2) * 10) / 10);
-        return { ...rec, isApplied: true };
+    const defaultItems: MenuItem[] = [
+      {
+        _id: 'm1',
+        name: 'Bun Parotta',
+        tamilName: 'பன் பரோட்டா',
+        category: 'Parotta',
+        price: 35,
+        description: 'Soft, fluffy and multi-layered Tamil Nadu style bun parotta served with spicy chicken salna.',
+        imageUrl: 'https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?auto=format&fit=crop&w=800&q=80',
+        isVeg: false,
+        isAvailable: true,
+        isPopular: true,
+        isSpecial: true,
+        rating: 4.9,
+        preparationTime: '5-10 mins',
+        tags: ['Must Try', 'Signature', 'Chef Special'],
+        quickBillKey: 1,
+        orderCount: 480
+      },
+      {
+        _id: 'm2',
+        name: 'Nool Parotta',
+        tamilName: 'நூல் பரோட்டா',
+        category: 'Parotta',
+        price: 40,
+        description: 'Thread-like layered parotta crafted to crispy perfection, soft and flaky inside.',
+        imageUrl: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=80',
+        isVeg: false,
+        isAvailable: true,
+        isPopular: true,
+        isSpecial: false,
+        rating: 4.8,
+        preparationTime: '8-12 mins',
+        tags: ['Crispy', 'Popular'],
+        quickBillKey: null,
+        orderCount: 310
+      },
+      {
+        _id: 'm3',
+        name: 'Elai Parotta',
+        tamilName: 'இலை பரோட்டா',
+        category: 'Parotta',
+        price: 130,
+        description: 'Bun parotta smothered in thick chicken chukka gravy, wrapped in fresh banana leaf and slow steamed.',
+        imageUrl: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=80',
+        isVeg: false,
+        isAvailable: true,
+        isPopular: true,
+        isSpecial: true,
+        rating: 5.0,
+        preparationTime: '12-15 mins',
+        tags: ['Banana Leaf', 'Signature'],
+        quickBillKey: null,
+        orderCount: 290
+      },
+      {
+        _id: 'm4',
+        name: 'Chicken Kothu Parotta',
+        tamilName: 'சிக்கன் கொத்து பரோட்டா',
+        category: 'Parotta',
+        price: 120,
+        description: 'Shredded bun parotta tossed on hot iron tawa with spiced chicken pieces, scrambled eggs, and curry leaves.',
+        imageUrl: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=800&q=80',
+        isVeg: false,
+        isAvailable: true,
+        isPopular: true,
+        isSpecial: false,
+        rating: 4.9,
+        preparationTime: '10-15 mins',
+        tags: ['Spicy', 'Street Style'],
+        quickBillKey: null,
+        orderCount: 415
+      },
+      {
+        _id: 'm5',
+        name: 'Chicken Biryani',
+        tamilName: 'சிக்கன் பிரியாணி',
+        category: 'Biryani',
+        price: 150,
+        description: 'Aromatic Seeraga Samba rice cooked with tender chicken pieces, ghee, and authentic Kovai spices.',
+        imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=800&q=80',
+        isVeg: false,
+        isAvailable: true,
+        isPopular: true,
+        isSpecial: true,
+        rating: 4.9,
+        preparationTime: '5 mins',
+        tags: ['Best Seller', 'Seeraga Samba'],
+        quickBillKey: 2,
+        orderCount: 520
+      },
+      {
+        _id: 'm6',
+        name: 'Pepper Chicken Gravy',
+        tamilName: 'பெப்பர் சிக்கன் கிரேவி',
+        category: 'Chicken',
+        price: 180,
+        description: 'Tender chicken braised in freshly ground black pepper, small shallots, and curry leaves gravy.',
+        imageUrl: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?auto=format&fit=crop&w=800&q=80',
+        isVeg: false,
+        isAvailable: true,
+        isPopular: true,
+        isSpecial: true,
+        rating: 4.9,
+        preparationTime: '12-15 mins',
+        tags: ['Pepper Hot', 'Classic'],
+        quickBillKey: 5,
+        orderCount: 380
+      },
+      {
+        _id: 'm7',
+        name: 'Chicken 65',
+        tamilName: 'சிக்கன் 65',
+        category: 'Chicken',
+        price: 150,
+        description: 'Crispy deep fried boneless chicken marinated in red chilli paste, ginger-garlic, and curry leaves.',
+        imageUrl: 'https://images.unsplash.com/photo-1610057099431-d73a1c9d2f2f?auto=format&fit=crop&w=800&q=80',
+        isVeg: false,
+        isAvailable: true,
+        isPopular: true,
+        isSpecial: false,
+        rating: 4.9,
+        preparationTime: '8-10 mins',
+        tags: ['Starter', 'Favorite'],
+        quickBillKey: null,
+        orderCount: 460
+      },
+      {
+        _id: 'm8',
+        name: 'Chicken Rice',
+        tamilName: 'சிக்கன் ரைஸ்',
+        category: 'Rice & Noodles',
+        price: 120,
+        description: 'Wok-tossed Indo-Chinese rice with marinated chicken bits, scrambled eggs, and spring onion.',
+        imageUrl: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=800&q=80',
+        isVeg: false,
+        isAvailable: true,
+        isPopular: true,
+        isSpecial: false,
+        rating: 4.7,
+        preparationTime: '10 mins',
+        tags: ['Fast Food'],
+        quickBillKey: 3,
+        orderCount: 390
+      },
+      {
+        _id: 'm9',
+        name: 'Egg Rice',
+        tamilName: 'முட்டை ரைஸ்',
+        category: 'Rice & Noodles',
+        price: 95,
+        description: 'Wok-fried rice blended with fluffy eggs, white pepper, and coriander leaves.',
+        imageUrl: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80',
+        isVeg: false,
+        isAvailable: true,
+        isPopular: true,
+        isSpecial: false,
+        rating: 4.6,
+        preparationTime: '8 mins',
+        tags: ['Fast Food'],
+        quickBillKey: 4,
+        orderCount: 350
+      },
+      {
+        _id: 'm10',
+        name: 'Ghee Roast Dosa',
+        tamilName: 'நெய் ரோஸ்ட் தோசை',
+        category: 'Dosa / Tiffin',
+        price: 85,
+        description: 'Golden paper crispy crepe roasted in pure desi ghee, served with coconut & kara chutney.',
+        imageUrl: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=800&q=80',
+        isVeg: true,
+        isAvailable: true,
+        isPopular: true,
+        isSpecial: false,
+        rating: 4.9,
+        preparationTime: '8 mins',
+        tags: ['Pure Veg', 'Ghee Flavor'],
+        quickBillKey: null,
+        orderCount: 310
+      },
+      {
+        _id: 'm11',
+        name: 'Madurai Jigarthanda',
+        tamilName: 'மதுரை ஜிகர்தண்டா',
+        category: 'Beverages',
+        price: 65,
+        description: 'Traditional cooling dessert drink crafted with almond gum (badam pisin), nannari syrup, and cream ice cream.',
+        imageUrl: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=800&q=80',
+        isVeg: true,
+        isAvailable: true,
+        isPopular: true,
+        isSpecial: true,
+        rating: 5.0,
+        preparationTime: '3 mins',
+        tags: ['Famous Cooling Drink'],
+        quickBillKey: null,
+        orderCount: 380
       }
-      return rec;
-    });
-    return mockAiRecommendations.find(r => r.id === id)!;
+    ];
+
+    let items = [...defaultItems];
+    if (category && category !== 'ALL') items = items.filter(i => i.category === category);
+    if (search) items = items.filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
+    if (vegOnly) items = items.filter(i => i.isVeg);
+
+    return items;
   },
 
-  // Controllable Equipment
-  getControllableSystems: async (): Promise<ControllableSystem[]> => {
-    const backendData = await request<ControllableSystem[]>('/building/controls');
-    if (backendData) return backendData;
-    return [...mockControllableSystems];
+  createMenuItem: (itemData: Partial<MenuItem>) =>
+    request<MenuItem>('/menu', {
+      method: 'POST',
+      body: JSON.stringify(itemData),
+    }),
+
+  updateMenuItem: (id: string, itemData: Partial<MenuItem>) =>
+    request<MenuItem>(`/menu/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(itemData),
+    }),
+
+  toggleItemAvailability: (id: string, isAvailable: boolean) =>
+    request<MenuItem>(`/menu/${id}/availability`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isAvailable }),
+    }),
+
+  deleteMenuItem: (id: string) =>
+    request<{ message: string }>(`/menu/${id}`, { method: 'DELETE' }),
+
+  // Orders & Billing
+  createOrder: (orderData: {
+    items: { menuItemId?: string; name: string; price: number; quantity: number; notes?: string }[];
+    orderType: string;
+    tableNumber?: string;
+    discount?: number;
+    taxRate?: number;
+    paymentMethod: string;
+    amountReceived?: number;
+    notes?: string;
+    cashierName?: string;
+  }) =>
+    request<Order>('/orders', {
+      method: 'POST',
+      body: JSON.stringify(orderData),
+    }),
+
+  getOrders: async (params: {
+    search?: string;
+    orderType?: string;
+    paymentMethod?: string;
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<Order[]> => {
+    const qp = new URLSearchParams();
+    if (params.search) qp.append('search', params.search);
+    if (params.orderType) qp.append('orderType', params.orderType);
+    if (params.paymentMethod) qp.append('paymentMethod', params.paymentMethod);
+    if (params.status) qp.append('status', params.status);
+    if (params.startDate) qp.append('startDate', params.startDate);
+    if (params.endDate) qp.append('endDate', params.endDate);
+
+    const data = await request<Order[]>(`/orders?${qp.toString()}`);
+    if (data && data.length > 0) return data;
+
+    // Fallback dummy historical orders
+    return Array.from({ length: 25 }, (_, i) => ({
+      _id: `ord-${1000 + i}`,
+      orderNumber: `KB-${1020 + i}`,
+      orderType: (i % 3 === 0 ? 'Dine In' : i % 3 === 1 ? 'Takeaway' : 'Parcel') as any,
+      tableNumber: i % 3 === 0 ? `Table ${String((i % 12) + 1).padStart(2, '0')}` : 'N/A',
+      items: [
+        { name: 'Bun Parotta', price: 35, quantity: 3 },
+        { name: 'Pepper Chicken Gravy', price: 180, quantity: 1 },
+        { name: 'Chicken Biryani', price: 150, quantity: 1 }
+      ],
+      subtotal: 435,
+      discount: 15,
+      tax: 21,
+      taxRate: 5,
+      grandTotal: 441,
+      paymentMethod: (i % 2 === 0 ? 'UPI' : 'Cash') as any,
+      amountReceived: 450,
+      change: 9,
+      paymentStatus: 'Paid',
+      status: 'COMPLETED',
+      cashierName: 'Kovai POS Operator',
+      createdAt: new Date(Date.now() - i * 3600 * 1000 * 4).toISOString(),
+      updatedAt: new Date(Date.now() - i * 3600 * 1000 * 4).toISOString()
+    }));
   },
 
-  updateSystemControl: async (id: string, mode: any, setpoint?: string): Promise<ControllableSystem> => {
-    mockControllableSystems = mockControllableSystems.map(sys => {
-      if (sys.id === id) {
-        let newPower = sys.powerKw;
-        if (mode === 'OFF') newPower = 0;
-        else if (mode === 'AUTO') newPower = 0.5 * sys.powerKw + 0.3;
-        else if (mode === 'PEAK-SHIFT') newPower = 0.4 * sys.powerKw;
-        else if (mode === 'ON') newPower = sys.powerKw * 1.2;
+  getOrderById: (id: string) => request<Order>(`/orders/${id}`),
 
-        return {
-          ...sys,
-          currentMode: mode,
-          setpoint: setpoint || sys.setpoint,
-          powerKw: Math.round(newPower * 100) / 100
-        };
-      }
-      return sys;
-    });
+  updateOrderStatus: (id: string, status: string) =>
+    request<Order>(`/orders/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
 
-    // Recalculate total current power metric dynamically
-    const totalPower = mockControllableSystems.reduce((sum, s) => sum + s.powerKw, 1.2);
-    mockMetrics.currentPowerKw = Math.round(totalPower * 10) / 10;
-
-    return mockControllableSystems.find(s => s.id === id)!;
+  getKdsActiveOrders: async (): Promise<Order[]> => {
+    const data = await request<Order[]>('/orders/kds/active');
+    if (data && data.length > 0) return data;
+    return [];
   },
 
-  // Live Alert System
-  getAlerts: async (): Promise<AlertItem[]> => {
-    const backendData = await request<AlertItem[]>('/building/alerts');
-    if (backendData) return backendData;
-    return [...mockAlerts];
-  },
+  // Sales & Reports
+  getSalesDashboard: async (): Promise<SalesDashboardData> => {
+    const data = await request<SalesDashboardData>('/sales/dashboard');
+    if (data) return data;
 
-  acknowledgeAlert: async (id: string): Promise<AlertItem[]> => {
-    mockAlerts = mockAlerts.map(a => a.id === id ? { ...a, acknowledged: true } : a);
-    return [...mockAlerts];
-  },
-
-  // Demand Response Simulation
-  getDemandResponse: async (): Promise<DemandResponseSimulation> => {
-    const backendData = await request<DemandResponseSimulation>('/building/demand-response');
-    if (backendData) return backendData;
-    return { ...mockDemandResponse };
-  },
-
-  togglePeakShift: async (active: boolean): Promise<DemandResponseSimulation> => {
-    mockDemandResponse = {
-      ...mockDemandResponse,
-      isShiftActive: active,
-      gridStatus: active ? 'OPTIMIZED' : 'PEAK_ALERT'
-    };
-    if (active) {
-      mockMetrics.currentPowerKw = mockDemandResponse.postOptimizationKw;
-      mockMetrics.energySavingPercent = 22.5;
-    } else {
-      mockMetrics.currentPowerKw = 4.2;
-      mockMetrics.energySavingPercent = 18.4;
-    }
-    return { ...mockDemandResponse };
-  },
-
-  // Occupant Comfort Stats
-  getOccupantExperience: async (): Promise<OccupantExperienceMetrics> => {
     return {
-      temperatureC: mockMetrics.indoorTempC,
-      tempStatus: `${mockMetrics.indoorTempC}°C — Comfortable`,
-      co2Ppm: mockMetrics.co2Ppm,
-      co2Status: `${mockMetrics.co2Ppm} ppm — Good`,
-      humidityPercent: 52,
-      humidityStatus: '52% — Comfortable',
-      lightingLux: 780,
-      lightingStatus: '780 lux — Suitable',
-      occupancyPercent: mockMetrics.occupancyPercent,
-      comfortScore: mockMetrics.comfortScore
+      todaySales: 18450,
+      totalOrdersCount: 126,
+      avgOrderValue: 146,
+      pendingOrdersCount: 8,
+      bestSellingItem: 'Bun Parotta',
+      totalDiscount: 450,
+      paymentBreakdown: [
+        { name: 'Cash', value: 7200 },
+        { name: 'UPI', value: 9450 },
+        { name: 'Card', value: 1800 }
+      ],
+      hourlySalesChart: [
+        { hour: '11 AM', sales: 850 },
+        { hour: '12 PM', sales: 1840 },
+        { hour: '1 PM', sales: 3420 },
+        { hour: '2 PM', sales: 2950 },
+        { hour: '3 PM', sales: 1200 },
+        { hour: '4 PM', sales: 980 },
+        { hour: '5 PM', sales: 1450 },
+        { hour: '6 PM', sales: 2100 },
+        { hour: '7 PM', sales: 3890 },
+        { hour: '8 PM', sales: 4120 },
+        { hour: '9 PM', sales: 2650 }
+      ],
+      dailySalesChart: [
+        { day: 'Mon', totalSales: 12450, orders: 85 },
+        { day: 'Tue', totalSales: 14320, orders: 92 },
+        { day: 'Wed', totalSales: 13780, orders: 88 },
+        { day: 'Thu', totalSales: 16420, orders: 110 },
+        { day: 'Fri', totalSales: 18450, orders: 126 },
+        { day: 'Sat', totalSales: 21320, orders: 145 },
+        { day: 'Sun', totalSales: 24180, orders: 160 }
+      ],
+      topDishes: [
+        { rank: 1, name: 'Bun Parotta', category: 'Parotta', imageUrl: 'https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?auto=format&fit=crop&w=800&q=80', orders: 126, revenue: 4410 },
+        { rank: 2, name: 'Chicken Biryani', category: 'Biryani', imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=800&q=80', orders: 94, revenue: 14100 },
+        { rank: 3, name: 'Pepper Chicken Gravy', category: 'Chicken', imageUrl: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?auto=format&fit=crop&w=800&q=80', orders: 71, revenue: 12780 },
+        { rank: 4, name: 'Nool Parotta', category: 'Parotta', imageUrl: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=80', orders: 65, revenue: 2600 },
+        { rank: 5, name: 'Chicken 65', category: 'Chicken', imageUrl: 'https://images.unsplash.com/photo-1610057099431-d73a1c9d2f2f?auto=format&fit=crop&w=800&q=80', orders: 58, revenue: 8700 }
+      ]
+    };
+  },
+
+  getPopularItems: async (): Promise<MenuItem[]> => {
+    const data = await request<MenuItem[]>('/sales/popular');
+    if (data && data.length > 0) return data;
+    return (await api.getMenuItems()).slice(0, 5);
+  },
+
+  closeDay: async (closedBy: string): Promise<{ message: string; report: DailyClosingReport }> => {
+    const res = await request<{ message: string; report: DailyClosingReport }>('/sales/close-day', {
+      method: 'POST',
+      body: JSON.stringify({ closedBy }),
+    });
+
+    if (res && res.report) return res;
+
+    return {
+      message: 'Day closed successfully',
+      report: {
+        dateStr: new Date().toISOString().split('T')[0],
+        totalOrders: 126,
+        totalSales: 18450,
+        cashSales: 7200,
+        upiSales: 9450,
+        cardSales: 1800,
+        totalDiscount: 450,
+        totalTax: 920,
+        cancelledOrders: 2,
+        netSales: 18450,
+        closedBy,
+        closedAt: new Date().toISOString()
+      }
     };
   }
 };

@@ -1,71 +1,105 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
-import { LandingOverview } from './pages/LandingOverview';
 import { DashboardOverview } from './pages/DashboardOverview';
-import { LiveSensors } from './pages/LiveSensors';
-import { IntelligentControl } from './pages/IntelligentControl';
-import { AiAnalytics } from './pages/AiAnalytics';
-import { SystemArchitecture } from './pages/SystemArchitecture';
-import { AlertHistory } from './pages/AlertHistory';
-import { ValidationRoadmap } from './pages/ValidationRoadmap';
+import { PosBilling } from './pages/PosBilling';
+import { CustomerMenu } from './pages/CustomerMenu';
+import { KitchenDisplay } from './pages/KitchenDisplay';
+import { BillHistory } from './pages/BillHistory';
+import { SalesDashboard } from './pages/SalesDashboard';
+import { InventoryManager } from './pages/InventoryManager';
 import { Login } from './pages/Login';
-import { QuickBillModal } from './components/QuickBillModal'; // Quick Load Shift modal
-import { ReceiptModal } from './components/ReceiptModal';     // Energy Audit Report modal
+import { QuickBillModal } from './components/QuickBillModal';
+import { ReceiptModal } from './components/ReceiptModal';
+import { MenuItem, Order } from './types';
+import { api } from './services/api';
 
 export function App() {
   const [currentRoute, setCurrentRoute] = useState<string>('/');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
-  const [isQuickControlOpen, setIsQuickControlOpen] = useState<boolean>(false);
-  const [isReportOpen, setIsReportOpen] = useState<boolean>(false);
+  const [isQuickBillOpen, setIsQuickBillOpen] = useState<boolean>(false);
+  const [quickBillMenuItems, setQuickBillMenuItems] = useState<MenuItem[]>([]);
+  
+  // Shared Receipt Modal
+  const [selectedBillForReceipt, setSelectedBillForReceipt] = useState<Order | null>(null);
+  const [isReceiptOpen, setIsReceiptOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    const handlePopState = () => {
-      const path = window.location.pathname;
-      if (['/dashboard', '/sensors', '/controls', '/analytics', '/demand-response', '/alerts', '/architecture', '/roadmap', '/login'].includes(path)) {
-        setCurrentRoute(path);
-      } else {
-        setCurrentRoute('/');
-      }
-    };
+    const path = window.location.pathname;
+    if (path === '/pos') setCurrentRoute('/pos');
+    else if (path === '/menu') setCurrentRoute('/menu');
+    else if (path === '/kitchen') setCurrentRoute('/kitchen');
+    else if (path === '/sales') setCurrentRoute('/sales');
+    else if (path === '/bill-history') setCurrentRoute('/bill-history');
+    else if (path === '/inventory') setCurrentRoute('/inventory');
+    else if (path === '/login') setCurrentRoute('/login');
+    else setCurrentRoute('/');
 
-    handlePopState();
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    loadQuickBillData();
   }, []);
+
+  const loadQuickBillData = async () => {
+    try {
+      const items = await api.getMenuItems();
+      setQuickBillMenuItems(items.filter(i => i.quickBillKey !== null && i.quickBillKey !== undefined));
+    } catch (err) {
+      console.error('Quick bill data fetch error:', err);
+    }
+  };
 
   const handleNavigate = (route: string) => {
     setCurrentRoute(route);
     window.history.pushState(null, '', route);
   };
 
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = (token: string) => {
     setIsAuthenticated(true);
-    handleNavigate('/dashboard');
+    handleNavigate('/');
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('smart_building_token');
+    localStorage.removeItem('kovai_pos_token');
     setIsAuthenticated(false);
     handleNavigate('/login');
   };
 
-  // Standalone Login Screen
-  if (currentRoute === '/login' || !isAuthenticated) {
-    return <Login onLoginSuccess={handleLoginSuccess} />;
+  const handleOpenBillDetail = (order: Order) => {
+    setSelectedBillForReceipt(order);
+    setIsReceiptOpen(true);
+  };
+
+  // Standalone Public Digital Menu
+  if (currentRoute === '/menu') {
+    return (
+      <div className="min-h-screen bg-charcoal-950 flex flex-col font-sans">
+        <Navbar
+          currentRoute={currentRoute}
+          onNavigate={handleNavigate}
+          onOpenQuickBill={() => setIsQuickBillOpen(true)}
+          onLogout={handleLogout}
+        />
+        <CustomerMenu />
+      </div>
+    );
   }
 
+  // Standalone Login Screen
+  if (currentRoute === '/login' || !isAuthenticated) {
+    return (
+      <Login onLoginSuccess={handleLoginSuccess} />
+    );
+  }
+
+  // Main Restaurant POS Workstation Layout
   return (
-    <div className="h-screen bg-slate-950 flex flex-col overflow-hidden font-sans">
-      {/* Header Bar */}
+    <div className="h-screen bg-charcoal-950 flex flex-col overflow-hidden font-sans">
       <Navbar
         currentRoute={currentRoute}
         onNavigate={handleNavigate}
-        onOpenQuickBill={() => setIsQuickControlOpen(true)}
+        onOpenQuickBill={() => setIsQuickBillOpen(true)}
         onLogout={handleLogout}
       />
 
-      {/* Body Workstation Layout */}
       <div className="flex-1 flex overflow-hidden">
         <Sidebar
           currentRoute={currentRoute}
@@ -73,35 +107,37 @@ export function App() {
           onLogout={handleLogout}
         />
 
-        <main className="flex-1 overflow-y-auto bg-slate-950">
-          {currentRoute === '/' && <LandingOverview onNavigate={handleNavigate} />}
-          {currentRoute === '/dashboard' && (
+        <main className="flex-1 overflow-y-auto bg-charcoal-950">
+          {currentRoute === '/' && (
             <DashboardOverview
               onNavigate={handleNavigate}
-              onOpenReportDetail={() => setIsReportOpen(true)}
+              onOpenBillDetail={handleOpenBillDetail}
             />
           )}
-          {currentRoute === '/sensors' && <LiveSensors />}
-          {currentRoute === '/controls' && <IntelligentControl />}
-          {currentRoute === '/analytics' && <AiAnalytics />}
-          {currentRoute === '/demand-response' && <ValidationRoadmap onNavigate={handleNavigate} />}
-          {currentRoute === '/alerts' && <AlertHistory />}
-          {currentRoute === '/architecture' && <SystemArchitecture />}
-          {currentRoute === '/roadmap' && <ValidationRoadmap onNavigate={handleNavigate} />}
+          {currentRoute === '/pos' && <PosBilling />}
+          {currentRoute === '/kitchen' && <KitchenDisplay />}
+          {currentRoute === '/bill-history' && <BillHistory />}
+          {currentRoute === '/sales' && <SalesDashboard />}
+          {currentRoute === '/inventory' && <InventoryManager />}
         </main>
       </div>
 
-      {/* Global Quick Control / Load Shift Modal */}
+      {/* Global Quick Bill Drawer Modal */}
       <QuickBillModal
-        isOpen={isQuickControlOpen}
-        onClose={() => setIsQuickControlOpen(false)}
-        onSuccess={() => handleNavigate('/dashboard')}
+        isOpen={isQuickBillOpen}
+        onClose={() => setIsQuickBillOpen(false)}
+        quickBillItems={quickBillMenuItems}
+        onAddItem={() => {
+          handleNavigate('/pos');
+          setIsQuickBillOpen(false);
+        }}
       />
 
-      {/* Global Energy Audit Report Modal */}
+      {/* Global Bill Detail Thermal Receipt Modal */}
       <ReceiptModal
-        isOpen={isReportOpen}
-        onClose={() => setIsReportOpen(false)}
+        order={selectedBillForReceipt}
+        isOpen={isReceiptOpen}
+        onClose={() => setIsReceiptOpen(false)}
       />
     </div>
   );
